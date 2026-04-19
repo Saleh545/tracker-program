@@ -1,0 +1,123 @@
+body {
+  background-color: #0f172a;
+  color: #f8fafc;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.container {
+  max-width: 450px;
+  margin: 20px auto;
+  padding: 15px;
+  text-align: center;
+}
+
+h1 {
+  background: linear-gradient(to right, #4285F4, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.8rem;
+}
+
+/* Şəkil yükləmə düyməsinin düzəlişi */
+.custom-upload-btn {
+  display: block; /* Mətnin görünməsi üçün block etdik */
+  background: rgba(66, 133, 244, 0.15);
+  border: 2px dashed #4285F4;
+  color: #4285F4;
+  padding: 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+  margin-bottom: 20px;
+}
+
+.custom-upload-btn:hover {
+  background: rgba(66, 133, 244, 0.25);
+}
+
+.input-group {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+button[type="submit"] {
+  background: #4285F4;
+  color: white;
+  border: none;
+  padding: 15px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.filter-section {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.show-all-btn {
+  background: #475569;
+  color: white;
+  border: none;
+  padding: 0 15px;
+  border-radius: 8px;
+}
+
+.clear-btn {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  padding: 10px;
+  width: 100%;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.table-container {
+  background: #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: #334155;
+  padding: 12px;
+  font-size: 12px;
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid #334155;
+}
+
+.high { color: #22c55e; font-weight: bold; }
+.low { color: #ef4444; }
