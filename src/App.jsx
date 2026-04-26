@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Tesseract from 'tesseract.js';
 import './App.css';
 
@@ -13,19 +13,19 @@ function App() {
     return savedRounds ? JSON.parse(savedRounds) : [];
   });
 
-  // Məlumat daxil etmə (Entry) üçün tarix həmişə bugünkü qalır
   const [roundNumber, setRoundNumber] = useState('');
   const [multiplier, setMultiplier] = useState('');
   const [time, setTime] = useState('');
   const [date, setDate] = useState(getTodayDate());
 
-  // --- AXTARIŞ (Filter) ---
-  // filterDate-i boş qoyuruq ki, proqram açılanda bütün tarixləri göstərsin
   const [filterDate, setFilterDate] = useState(''); 
   const [searchMultiplier, setSearchMultiplier] = useState('');
   const [searchRound, setSearchRound] = useState('');
   const [searchTime, setSearchTime] = useState('');
   
+  // --- SIRALAMA STATE-İ ---
+  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'desc' });
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
@@ -37,25 +37,19 @@ function App() {
     localStorage.setItem('aviatorData', JSON.stringify(rounds));
   }, [rounds]);
 
-  // OCR Analiz (Inputlara doldurma)
+  // OCR Analiz
   const performOCR = async (source) => {
     setIsProcessing(true);
     try {
       const result = await Tesseract.recognize(source, 'eng+aze');
       const text = result.data.text;
-
       const roundMatch = text.match(/(DÖVRƏ|DOVRE|ROUND)\s*(\d+)/i);
       if (roundMatch) setRoundNumber(roundMatch[2]);
-
       const multiMatch = text.match(/(\d+[\.,]\d+)/);
       if (multiMatch) setMultiplier(multiMatch[1].replace(',', '.'));
-
       const timeMatch = text.match(/\b([01]?\d|2[0-3]):([0-5]\d):([0-5]\d)\b/);
-      if (timeMatch) {
-        setTime(timeMatch[0]);
-      } else {
-        setTime(new Date().toTimeString().split(' ')[0]);
-      }
+      if (timeMatch) setTime(timeMatch[0]);
+      else setTime(new Date().toTimeString().split(' ')[0]);
     } catch (error) {
       alert("Xəta baş verdi.");
     } finally {
@@ -114,21 +108,49 @@ function App() {
   };
 
   const deleteRound = (id) => setRounds(rounds.filter(r => r.id !== id));
-  
-  const clearHistory = () => {
-    if (window.confirm("Bütün tarixçəni silmək?")) setRounds([]);
+  const clearHistory = () => { if (window.confirm("Bütün tarixçəni silmək?")) setRounds([]); };
+
+  // --- SIRALAMA FUNKSİYASI ---
+  const requestSort = (key) => {
+    let direction = 'desc';
+    if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
   };
 
-  // --- ÇOXFUNKSİYALI FİLTRLƏMƏ ---
-  const filteredRounds = rounds.filter(round => {
-    // Əgər filterDate boşdursa, tarix yoxlamasından keçsin (true)
-    const matchesDate = filterDate ? round.date === filterDate : true;
-    const matchesMultiplier = searchMultiplier ? round.multiplier.includes(searchMultiplier) : true;
-    const matchesRound = searchRound ? round.roundNumber.includes(searchRound) : true;
-    const matchesTime = searchTime ? round.time.includes(searchTime) : true;
+  // --- FİLTRLƏMƏ VƏ SIRALAMA MƏNTİQİ ---
+  const sortedAndFilteredRounds = useMemo(() => {
+    let sortableItems = rounds.filter(round => {
+      const matchesDate = filterDate ? round.date === filterDate : true;
+      const matchesMultiplier = searchMultiplier ? round.multiplier.includes(searchMultiplier) : true;
+      const matchesRound = searchRound ? round.roundNumber.includes(searchRound) : true;
+      const matchesTime = searchTime ? round.time.includes(searchTime) : true;
+      return matchesDate && matchesMultiplier && matchesRound && matchesTime;
+    });
 
-    return matchesDate && matchesMultiplier && matchesRound && matchesTime;
-  });
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let valA = a[sortConfig.key];
+        let valB = b[sortConfig.key];
+
+        // Dövrə ID-ni rəqəm kimi müqayisə etmək üçün
+        if (sortConfig.key === 'roundNumber') {
+          valA = valA === '---' ? 0 : parseInt(valA);
+          valB = valB === '---' ? 0 : parseInt(valB);
+        }
+
+        if (valA < valB) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [rounds, filterDate, searchMultiplier, searchRound, searchTime, sortConfig]);
 
   return (
     <div className="container">
@@ -156,7 +178,6 @@ function App() {
       <canvas ref={canvasRef} style={{ display: 'none' }} />
       {isProcessing && <div className="status-toast">⏳ Analiz...</div>}
 
-      {/* Manual Giriş */}
       <div className="card">
         <h3>Məlumat Əlavə Et</h3>
         <form onSubmit={addRound} className="input-group">
@@ -176,12 +197,11 @@ function App() {
         </form>
       </div>
 
-      {/* 🔍 Axtarış Bölməsi (Bütün tarix üçün) */}
       <div className="filter-section card">
         <h3>🔍 Detallı Axtarış</h3>
         <div className="search-grid">
           <div className="field">
-            <label>Tarixə görə (Boş = Hamısı):</label>
+            <label>Tarixə görə:</label>
             <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
           </div>
           <div className="field"><label>Dövrə:</label><input type="text" value={searchRound} onChange={(e) => setSearchRound(e.target.value)} placeholder="ID..." /></div>
@@ -196,10 +216,22 @@ function App() {
       <div className="table-container">
         <table>
           <thead>
-            <tr><th>Tarix</th><th>Dövrə</th><th>Saat</th><th>Əmsal</th><th>Sil</th></tr>
+            <tr>
+              <th onClick={() => requestSort('date')} className="sortable-th">
+                Tarix {sortConfig.key === 'date' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
+              </th>
+              <th onClick={() => requestSort('roundNumber')} className="sortable-th">
+                Dövrə {sortConfig.key === 'roundNumber' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
+              </th>
+              <th onClick={() => requestSort('time')} className="sortable-th">
+                Saat {sortConfig.key === 'time' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}
+              </th>
+              <th>Əmsal</th>
+              <th>Sil</th>
+            </tr>
           </thead>
           <tbody>
-            {filteredRounds.map((round) => (
+            {sortedAndFilteredRounds.map((round) => (
               <tr key={round.id} className={parseFloat(round.multiplier) >= 2 ? 'high' : 'low'}>
                 <td>{round.date}</td><td>{round.roundNumber}</td><td>{round.time}</td><td>{round.multiplier}x</td>
                 <td><button onClick={() => deleteRound(round.id)} className="delete-item-btn">×</button></td>

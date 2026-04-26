@@ -369,3 +369,20 @@ video {
   font-weight: bold;
   z-index: 1100;
 }
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.sortable-th:hover {
+  background: #475569 !important;
+  color: white;
+}
+
+/* Sıralama işarəsi üçün rəng */
+.sortable-th::after {
+  margin-left: 5px;
+  font-size: 14px;
+  opacity: 0.7;
+}
